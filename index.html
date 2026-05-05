@@ -1,155 +1,169 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classic Pong - Liceo Classico Edition</title>
-    <style>
-        body {
-            background-color: #222;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        canvas {
-            border: 4px solid #fff;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            background-color: #000;
-        }
-        h1 { margin-bottom: 10px; font-weight: 300; }
-        .instructions { margin-top: 15px; color: #aaa; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pong Migliorato</title>
+
+<style>
+    body {
+        background: radial-gradient(circle, #111, #000);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    canvas {
+        border: 3px solid rgba(255,255,255,0.2);
+        box-shadow: 0 0 30px rgba(0,255,255,0.2);
+        border-radius: 10px;
+    }
+
+    h1 {
+        font-weight: 200;
+        letter-spacing: 3px;
+    }
+</style>
 </head>
+
 <body>
 
-    <h1>PONG</h1>
-    <canvas id="pongCanvas" width="800" height="400"></canvas>
-    <p class="instructions">Usa il <b>Mouse</b> per muovere la racchetta sinistra</p>
+<h1>PONG</h1>
+<canvas id="pongCanvas" width="800" height="400"></canvas>
 
-    <script>
-        const canvas = document.getElementById("pongCanvas");
-        const ctx = canvas.getContext("2d");
+<script>
+const canvas = document.getElementById("pongCanvas");
+const ctx = canvas.getContext("2d");
 
-        // Parametri della palla
-        let ballX = canvas.width / 2;
-        let ballY = canvas.height / 2;
-        let ballSpeedX = 5;
-        let ballSpeedY = 5;
-        const ballRadius = 10;
+// Palla (più lenta)
+let ballX = canvas.width / 2;
+let ballY = canvas.height / 2;
+let ballSpeedX = 3;
+let ballSpeedY = 3;
+const ballRadius = 10;
 
-        // Parametri racchette
-        const paddleHeight = 100;
-        const paddleWidth = 10;
-        let paddle1Y = (canvas.height - paddleHeight) / 2;
-        let paddle2Y = (canvas.height - paddleHeight) / 2;
-        const computerLevel = 0.08; // Difficoltà (0.1 è difficile, 0.05 facile)
+// Racchette
+const paddleHeight = 100;
+const paddleWidth = 10;
+let paddle1Y = (canvas.height - paddleHeight) / 2;
+let paddle2Y = (canvas.height - paddleHeight) / 2;
+const computerLevel = 0.08;
 
-        // Punteggio
-        let score1 = 0;
-        let score2 = 0;
+// Punteggio
+let score1 = 0;
+let score2 = 0;
 
-        // Movimento mouse
-        canvas.addEventListener('mousemove', function(evt) {
-            let rect = canvas.getBoundingClientRect();
-            let root = document.documentElement;
-            let mouseX = evt.clientX - rect.left - root.scrollLeft;
-            let mouseY = evt.clientY - rect.top - root.scrollTop;
-            paddle1Y = mouseY - (paddleHeight / 2);
-        });
+// Mouse
+canvas.addEventListener('mousemove', function(evt) {
+    let rect = canvas.getBoundingClientRect();
+    let mouseY = evt.clientY - rect.top;
+    paddle1Y = mouseY - paddleHeight / 2;
+});
 
-        function resetBall() {
+function resetBall() {
+    ballSpeedX = -ballSpeedX;
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+}
+
+function update() {
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+
+    // AI più fluida
+    let center = paddle2Y + paddleHeight / 2;
+    paddle2Y += (ballY - center) * computerLevel;
+
+    // Collisione sopra/sotto (fix corretto)
+    if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
+        ballSpeedY = -ballSpeedY;
+    }
+
+    // Sinistra
+    if (ballX < paddleWidth) {
+        if (ballY > paddle1Y && ballY < paddle1Y + paddleHeight) {
             ballSpeedX = -ballSpeedX;
-            ballX = canvas.width / 2;
-            ballY = canvas.height / 2;
+
+            let deltaY = ballY - (paddle1Y + paddleHeight / 2);
+            ballSpeedY = deltaY * 0.25;
+        } else if (ballX < 0) {
+            score2++;
+            resetBall();
         }
+    }
 
-        function update() {
-            // Movimento Palla
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
+    // Destra
+    if (ballX > canvas.width - paddleWidth) {
+        if (ballY > paddle2Y && ballY < paddle2Y + paddleHeight) {
+            ballSpeedX = -ballSpeedX;
 
-            // Movimento Computer (AI semplice)
-            let paddle2YCenter = paddle2Y + (paddleHeight / 2);
-            if (paddle2YCenter < ballY - 35) {
-                paddle2Y += 6;
-            } else if (paddle2YCenter > ballY + 35) {
-                paddle2Y -= 6;
-            }
-
-            // Rimbalzo bordi superiori e inferiori
-            if (ballY < 0 || ballY > canvas.height) {
-                ballSpeedY = -ballSpeedY;
-            }
-
-            // Rimbalzo racchetta sinistra (Giocatore)
-            if (ballX < paddleWidth) {
-                if (ballY > paddle1Y && ballY < paddle1Y + paddleHeight) {
-                    ballSpeedX = -ballSpeedX;
-                    // Effetto sulla velocità verticale in base a dove colpisce la racchetta
-                    let deltaY = ballY - (paddle1Y + paddleHeight / 2);
-                    ballSpeedY = deltaY * 0.3;
-                } else if (ballX < 0) {
-                    score2++; // Punto al computer
-                    resetBall();
-                }
-            }
-
-            // Rimbalzo racchetta destra (Computer)
-            if (ballX > canvas.width - paddleWidth) {
-                if (ballY > paddle2Y && ballY < paddle2Y + paddleHeight) {
-                    ballSpeedX = -ballSpeedX;
-                    let deltaY = ballY - (paddle2Y + paddleHeight / 2);
-                    ballSpeedY = deltaY * 0.3;
-                } else if (ballX > canvas.width) {
-                    score1++; // Punto al giocatore
-                    resetBall();
-                }
-            }
+            let deltaY = ballY - (paddle2Y + paddleHeight / 2);
+            ballSpeedY = deltaY * 0.25;
+        } else if (ballX > canvas.width) {
+            score1++;
+            resetBall();
         }
+    }
+}
 
-        function draw() {
-            // Sfondo
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+function draw() {
+    // Sfondo gradient
+    let gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#000");
+    gradient.addColorStop(1, "#0a0a2a");
 
-            // Linea centrale
-            ctx.strokeStyle = "white";
-            ctx.setLineDash([5, 15]);
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 0);
-            ctx.lineTo(canvas.width / 2, canvas.height);
-            ctx.stroke();
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Racchetta sinistra
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
+    // Glow
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "white";
 
-            // Racchetta destra
-            ctx.fillRect(canvas.width - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
+    // Linea centrale
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.setLineDash([10, 15]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-            // Palla
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            ctx.fill();
+    // Racchette
+    ctx.fillStyle = "#00e5ff";
+    ctx.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
 
-            // Punteggi
-            ctx.font = "30px Arial";
-            ctx.fillText(score1, 200, 50);
-            ctx.fillText(score2, canvas.width - 200, 50);
-        }
+    ctx.fillStyle = "#ff4081";
+    ctx.fillRect(canvas.width - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
 
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
+    // Palla glow
+    ctx.beginPath();
+    ctx.fillStyle = "white";
+    ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-        gameLoop();
-    </script>
+    // Reset glow per testo
+    ctx.shadowBlur = 0;
+
+    // Punteggio
+    ctx.fillStyle = "white";
+    ctx.font = "bold 32px Segoe UI";
+    ctx.fillText(score1, canvas.width / 4, 50);
+    ctx.fillText(score2, canvas.width * 3/4, 50);
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
 </body>
 </html>
