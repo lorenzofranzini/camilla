@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pong Migliorato</title>
+<title>Pong Neon Pink</title>
 
 <style>
     body {
-        background: radial-gradient(circle, #111, #000);
+        background: radial-gradient(circle, #1a002a, #000);
         color: white;
         display: flex;
         flex-direction: column;
@@ -19,14 +19,16 @@
     }
 
     canvas {
-        border: 3px solid rgba(255,255,255,0.2);
-        box-shadow: 0 0 30px rgba(0,255,255,0.2);
-        border-radius: 10px;
+        border: 3px solid rgba(255,255,255,0.1);
+        box-shadow: 0 0 40px rgba(255,0,150,0.3);
+        border-radius: 12px;
     }
 
     h1 {
         font-weight: 200;
-        letter-spacing: 3px;
+        letter-spacing: 4px;
+        color: #ff66cc;
+        text-shadow: 0 0 10px #ff66cc;
     }
 </style>
 </head>
@@ -40,12 +42,11 @@
 const canvas = document.getElementById("pongCanvas");
 const ctx = canvas.getContext("2d");
 
-// Palla (più lenta)
+// Palla
 let ballX = canvas.width / 2;
 let ballY = canvas.height / 2;
 let ballSpeedX = 3;
 let ballSpeedY = 3;
-const ballRadius = 10;
 
 // Racchette
 const paddleHeight = 100;
@@ -75,12 +76,12 @@ function update() {
     ballX += ballSpeedX;
     ballY += ballSpeedY;
 
-    // AI più fluida
+    // AI fluida
     let center = paddle2Y + paddleHeight / 2;
     paddle2Y += (ballY - center) * computerLevel;
 
-    // Collisione sopra/sotto (fix corretto)
-    if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
+    // Collisione sopra/sotto
+    if (ballY < 0 || ballY > canvas.height) {
         ballSpeedY = -ballSpeedY;
     }
 
@@ -88,7 +89,6 @@ function update() {
     if (ballX < paddleWidth) {
         if (ballY > paddle1Y && ballY < paddle1Y + paddleHeight) {
             ballSpeedX = -ballSpeedX;
-
             let deltaY = ballY - (paddle1Y + paddleHeight / 2);
             ballSpeedY = deltaY * 0.25;
         } else if (ballX < 0) {
@@ -101,7 +101,6 @@ function update() {
     if (ballX > canvas.width - paddleWidth) {
         if (ballY > paddle2Y && ballY < paddle2Y + paddleHeight) {
             ballSpeedX = -ballSpeedX;
-
             let deltaY = ballY - (paddle2Y + paddleHeight / 2);
             ballSpeedY = deltaY * 0.25;
         } else if (ballX > canvas.width) {
@@ -111,21 +110,38 @@ function update() {
     }
 }
 
+function drawBow(x, y) {
+    ctx.fillStyle = "#ff2ea6";
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#ff2ea6";
+
+    // Fiocco sinistro
+    ctx.beginPath();
+    ctx.arc(x - 6, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Fiocco destro
+    ctx.beginPath();
+    ctx.arc(x + 6, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Nodo centrale
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+}
+
 function draw() {
-    // Sfondo gradient
+    // Sfondo viola/rosa
     let gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, "#000");
-    gradient.addColorStop(1, "#0a0a2a");
+    gradient.addColorStop(0, "#0a001a");
+    gradient.addColorStop(1, "#2a003f");
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Glow
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = "white";
-
     // Linea centrale
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.strokeStyle = "rgba(255,105,180,0.3)";
     ctx.setLineDash([10, 15]);
     ctx.beginPath();
     ctx.moveTo(canvas.width / 2, 0);
@@ -133,24 +149,25 @@ function draw() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Racchette
-    ctx.fillStyle = "#00e5ff";
+    // Racchetta sinistra
+    ctx.fillStyle = "#ff66cc";
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "#ff66cc";
     ctx.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
 
-    ctx.fillStyle = "#ff4081";
+    // Racchetta destra
+    ctx.fillStyle = "#cc66ff";
+    ctx.shadowColor = "#cc66ff";
     ctx.fillRect(canvas.width - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
 
-    // Palla glow
-    ctx.beginPath();
-    ctx.fillStyle = "white";
-    ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-    ctx.fill();
+    // Pallina = fiocco
+    drawBow(ballX, ballY);
 
-    // Reset glow per testo
+    // Reset glow
     ctx.shadowBlur = 0;
 
     // Punteggio
-    ctx.fillStyle = "white";
+    ctx.fillStyle = "#ffccff";
     ctx.font = "bold 32px Segoe UI";
     ctx.fillText(score1, canvas.width / 4, 50);
     ctx.fillText(score2, canvas.width * 3/4, 50);
